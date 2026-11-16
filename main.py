@@ -175,6 +175,37 @@ def CC(startTime,period,phase,num,centerX,centerY,r,phaseD,degreeD,numD,Cr,Cphas
         for i in range(numD):
             C(centerX+r*sin(phaseD+degreeD*i),centerY+r*cos(phaseD+degreeD*i),Cr,CphaseD,Cdegree,CnumD,0,0,T,sT1,mT1,sT2,mT2,si1[i],si2[i],si3[i],si4[i],s1,sA1,t1,d1,dA1,s2,sA2,t2,d2,dA2,cR,img)
 
+def draw_hud(screen, hud_font, stage, gameTime, chara, stage_clear_times, left_panel, right_panel):
+    """Draw compact semi-transparent phase/time and HP bar HUDs."""
+    total_phases = (4, 5, 6)[stage]
+    current_phase = min(total_phases, gameTime // (60 * 30) + 1)
+    remain_sec = max(0, (stage_clear_times[stage] - gameTime + 59) // 60)
+
+    screen.blit(left_panel, (16, 596))
+    phase_text = hud_font.render(f"WAVE {current_phase}/{total_phases}   {remain_sec}s", True, W)
+    screen.blit(phase_text, phase_text.get_rect(midleft=(28, 612)))
+
+    screen.blit(right_panel, (714, 596))
+    hp = max(0, chara.playerHp)
+    hp_ratio = max(0.0, min(1.0, hp / chara.playerMaxHp))
+    if hp_ratio > 0.5:
+        bar_color = (80, 220, 140)
+    elif hp_ratio > 0.25:
+        bar_color = (245, 190, 60)
+    else:
+        bar_color = (235, 70, 80)
+
+    hp_text = hud_font.render(f"HP {hp:>3}", True, W)
+    screen.blit(hp_text, hp_text.get_rect(midleft=(726, 612)))
+
+    bar_x, bar_y, bar_w, bar_h = 804, 607, 128, 10
+    pygame.draw.rect(screen, (35, 35, 45), (bar_x, bar_y, bar_w, bar_h), border_radius=5)
+    fill_w = int(bar_w * hp_ratio)
+    if fill_w > 0:
+        pygame.draw.rect(screen, bar_color, (bar_x, bar_y, fill_w, bar_h), border_radius=5)
+    pygame.draw.rect(screen, (200, 200, 215), (bar_x, bar_y, bar_w, bar_h), 1, border_radius=5)
+
+
 # mainの関数
 async def main():
     global index, keyTime, titleTime, gameTime, stage, d
@@ -197,9 +228,15 @@ async def main():
     Win = pygame.image.load("Win.png")
     WinBack = pygame.image.load("WinBack.png")
 
-    font = pygame.font.Font(None, 40)
     small_font = pygame.font.Font(None, 28)
+    hud_font = pygame.font.Font(None, 26)
     stage_clear_times = [60 * 123, 60 * 153, 60 * 183]
+
+    left_panel = pygame.Surface((190, 32), pygame.SRCALPHA)
+    pygame.draw.rect(left_panel, (15, 15, 25, 145), left_panel.get_rect(), border_radius=8)
+    right_panel = pygame.Surface((230, 32), pygame.SRCALPHA)
+    pygame.draw.rect(right_panel, (15, 15, 25, 145), right_panel.get_rect(), border_radius=8)
+
     running = True
 
     while running:
@@ -237,11 +274,7 @@ async def main():
         # index 3 -- Play Game --
         elif index == 3:
             screen.blit(Back,(0,0))
-            remain_sec = max(0, (stage_clear_times[stage] - gameTime + 59) // 60)
-            stage_text = font.render(f"STAGE {stage + 1}   TIME {remain_sec}s", True, W)
-            screen.blit(stage_text, (20, 590))
-            text = font.render("HP " + str(chara.playerHp), True, W)
-            screen.blit(text,(820,590))
+            draw_hud(screen, hud_font, stage, gameTime, chara, stage_clear_times, left_panel, right_panel)
 
             if stage == 0:
                 CC(0,90,  0,20,  480,80, 30,random.randint(0,71),72,5,30,random.randint(0,29),30,12, 0,0,0,0,120,[[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56]],[[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56]],[[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56],[0,0,40,56]],[[0, 0,40,56],[0, 0,40,56],[0, 0,40,56],[0, 0,40,56],[0, 0,40,56]], 0,0,0,0,0,6,0,0,random.randint(-45,45),random.uniform(-0.4,0.4),15,Bullet)
